@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+
+{% block title %}Заказ №{{ order.id }}{% endblock %}
+
+{% block content %}
+  <h1>Заказ №{{ order.id }}</h1>
+
+  {% if order.items.all %}
+    <ul>
+      {% for item in order.items.all %}
+        <li>
+          <strong>{{ item.name }}</strong>: {{ item.price }} {{ item.currency }}
+        </li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <p>Нет товаров в заказе</p>
+  {% endif %}
+
+  {% if order.discount %}
+    <p><strong>Скидка:</strong> {{ order.discount.name }} ({{ order.discount.percentage }}%)</p>
+  {% endif %}
+  {% if order.tax %}
+    <p><strong>Налог:</strong> {{ order.tax.name }} ({{ order.tax.percentage }}%)</p>
+  {% endif %}
+
+  <p><strong>Итого:</strong> {{ total_price }}</p>
+
+  <button id="buy-button">Оплатить заказ</button>
+
+  <script src="https://js.stripe.com/v3/"></script>
+  <script>
+    const stripe = Stripe("{{ stripe_public_key }}");
+    const buyButton = document.getElementById("buy-button");
+
+    buyButton.addEventListener("click", function () {
+      fetch("{% url 'order_buy' order.id %}")
+        .then(response => response.json())
+        .then(session => {
+          return stripe.redirectToCheckout({ sessionId: session.id });
+        });
+    });
+  </script>
+{% endblock %}
